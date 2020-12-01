@@ -4,9 +4,9 @@ A PowerShell library to interact with the ZeroTier Network Controller API
 ## Getting Started
 1. Get an API Token from [ZeroTier](https://my.zerotier.com/account)
 1. Enter that API Token into a new file you create in your home directory called `.zerotier-api-token`
-```PowerShell
-notepad $env:USERPROFILE\.zerotier-api-token
-```
+    ```PowerShell
+    notepad $env:USERPROFILE\.zerotier-api-token
+    ```
 1. Use `Import-Module .\ZeroTierController.psm1` in a PowerShell window or a script to use the included commands.
 
 ## Commands
