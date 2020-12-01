@@ -62,6 +62,16 @@ function Invoke-ZeroTierAPI {
 function Get-ZeroTierStatus {
 
     [array]$Return = Invoke-ZeroTierAPI '/status'
+
+    #region Define the VISIBLE properties
+    # this is the list of properties visible by default
+    [string[]]$Visible = 'Online','ClusterNode','ReadOnlyMode','Uptime'
+    [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
+  
+    # add the information about the visible properties to the return value
+    $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
+    #endregion
+
     Return [array]$Return
 
 }
@@ -89,6 +99,17 @@ function Get-ZeroTierNetwork {
         }
 
         [array]$Return = Invoke-ZeroTierAPI $Path
+
+        #region Define the VISIBLE properties
+        # this is the list of properties visible by default
+        [string[]]$Visible = 'Id','Description','OnlineMemberCount','AuthorizedMemberCount'
+        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
+  
+        # add the information about the visible properties to the return value
+        $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
+        #endregion
+
+
         Return [array]$Return
 
     }
@@ -339,6 +360,16 @@ function Get-ZeroTierMember {
         }
         
         [array]$Return = Invoke-ZeroTierAPI $Path
+
+        #region Define the VISIBLE properties
+        # this is the list of properties visible by default
+        [string[]]$Visible = 'NodeId','Description','Name','Online'
+        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
+  
+        # add the information about the visible properties to the return value
+        $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
+        #endregion
+
         Return [array]$Return
 
     }
