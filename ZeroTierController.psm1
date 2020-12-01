@@ -75,11 +75,11 @@ function Get-ZeroTierNetwork {
     )
 
     Begin {
-        Write-Host -ForegroundColor Cyan "BEGIN: Get-ZeroTierNetwork"
+        Write-Debug "BEGIN: Get-ZeroTierNetwork"
     }
 
     Process {
-        Write-Host -ForegroundColor Cyan "PROCESS: Get-ZeroTierNetwork"
+        Write-Debug "PROCESS: Get-ZeroTierNetwork"
 
         # if no network is provided, zerotier will return all networks.
         $Path = "/network/$id"
@@ -93,7 +93,7 @@ function Get-ZeroTierNetwork {
     }
 
     End {
-        Write-Host -ForegroundColor Cyan "END: Get-ZeroTierNetwork"
+        Write-Debug "END: Get-ZeroTierNetwork"
     }
 
 }
@@ -182,11 +182,11 @@ function Set-ZeroTierNetwork {
     )
 
     Begin {
-        Write-Host -ForegroundColor Cyan "BEGIN: Set-ZeroTierNetwork"
+        Write-Debug "BEGIN: Set-ZeroTierNetwork"
     }
 
     Process {
-        Write-Host -ForegroundColor Cyan "PROCESS: Set-ZeroTierNetwork"
+        Write-Debug "PROCESS: Set-ZeroTierNetwork"
 
         # require network id to modify
         $Path = "/network/$id"
@@ -275,7 +275,7 @@ function Set-ZeroTierNetwork {
     }
 
     End {
-        Write-Host -ForegroundColor Cyan "END: Set-ZeroTierNetwork"
+        Write-Debug "END: Set-ZeroTierNetwork"
     }
 
 }
@@ -295,22 +295,18 @@ function Add-ZeroTierMember {
     )
 
     Begin {
-        Write-Host -ForegroundColor Cyan "BEGIN: Add-ZeroTierMember"
+        Write-Debug "BEGIN: Add-ZeroTierMember"
     }
 
     Process {
-        Write-Host -ForegroundColor Cyan "PROCESS: Add-ZeroTierMember"
-
-        #$Path = "/network/$id"
-
-        #Invoke-ZeroTierAPI $Path
+        Write-Debug "PROCESS: Add-ZeroTierMember"
 
         Set-ZeroTierNetwork -id $id -authTokens $node
 
     }
 
     End {
-        Write-Host -ForegroundColor Cyan "END: Add-ZeroTierMember"
+        Write-Debug "END: Add-ZeroTierMember"
     }
 
 }
@@ -329,11 +325,11 @@ function Get-ZeroTierMember {
     )
 
     Begin {
-        Write-Host -ForegroundColor Cyan "BEGIN: Get-ZeroTierMember"
+        Write-Debug "BEGIN: Get-ZeroTierMember"
     }
 
     Process {
-        Write-Host -ForegroundColor Cyan "PROCESS: Get-ZeroTierMember"
+        Write-Debug "PROCESS: Get-ZeroTierMember"
 
         # if no node is provided, zerotier will return all members.
         $Path = "/network/$id/member/$node"
@@ -347,7 +343,7 @@ function Get-ZeroTierMember {
     }
 
     End {
-        Write-Host -ForegroundColor Cyan "END: Get-ZeroTierMember"
+        Write-Debug "END: Get-ZeroTierMember"
     }
 
 
@@ -408,12 +404,12 @@ function Set-ZeroTierMember {
     )
 
     Begin {
-        Write-Host -ForegroundColor Cyan "BEGIN: Set-ZeroTierMember"
+        Write-Debug "BEGIN: Set-ZeroTierMember"
 
     }
 
     Process {
-        Write-Host -ForegroundColor Cyan "PROCESS: Set-ZeroTierMember"
+        Write-Debug "PROCESS: Set-ZeroTierMember"
 
         # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $id will be overloaded with a contatenation of the networkid and the node id :(
         $Path = "/network/$id/member/$node"
@@ -470,7 +466,7 @@ function Set-ZeroTierMember {
     }
 
     End {
-        Write-Host -ForegroundColor Cyan "END: Set-ZeroTierMember"
+        Write-Debug "END: Set-ZeroTierMember"
     }
 
 
@@ -501,7 +497,6 @@ function Enable-ZeroTierMember {
             $id = $networkId
         }
 
-        echo $NetworkId $node
         Set-ZeroTierMember -id $id -node $node -authorized $true
 
 }
@@ -529,7 +524,6 @@ function Disable-ZeroTierMember {
             $id = $networkId
         }
 
-        echo $NetworkId $node
         Set-ZeroTierMember -id $id -node $node -authorized $false
 
 }
