@@ -1,5 +1,5 @@
 ﻿# Settings
-[string]$Url = "http://my.zerotier.com/api"
+[string]$Url = "https://my.zerotier.com/api"
 [string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
 
 # Definitions
