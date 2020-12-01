@@ -39,7 +39,7 @@ function Invoke-ZeroTierAPI {
     # get the token each time we access zerotier
     $ZeroTierToken = Get-ZeroTierToken
 
-    # POST by default, GET if there's no $Body
+    # PUT by default, GET if there's no $Body
     $Method = "POST"
     if ($Body -eq $Null -or $Body -eq "") {
         $Method = "GET"  
@@ -61,8 +61,7 @@ function Invoke-ZeroTierAPI {
 
 function Get-ZeroTierStatus {
 
-    [array]$Return = Invoke-ZeroTierAPI '/status'
-    Return [array]$Return
+    Invoke-ZeroTierAPI '/status'
 
 }
 
