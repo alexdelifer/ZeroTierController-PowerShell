@@ -14,10 +14,8 @@ function Get-ZeroTierToken {
         [string]$ZeroTierToken =  Get-Content $TokenPath
     }
     else {
-    
         Write-Host -ForegroundColor Red "No API token found, please populate $TokenPath with an API token."
         Throw (Get-Content $TokenPath)
-
     }
 
     return [string]$ZeroTierToken
