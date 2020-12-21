@@ -4,18 +4,21 @@
 
 # Definitions
 [string]$Node = ""
-[string]$Id   = ""
+[string]$Id = ""
+
 
 # Internal Functions
 
 function Get-ZeroTierToken {
     
     if ( Test-Path $TokenPath ) {
-        [string]$ZeroTierToken =  Get-Content $TokenPath
+        [string]$ZeroTierToken = Get-Content $TokenPath
     }
     else {
+    
         Write-Host -ForegroundColor Red "No API token found, please populate $TokenPath with an API token."
         Throw (Get-Content $TokenPath)
+
     }
 
     return [string]$ZeroTierToken
@@ -23,14 +26,14 @@ function Get-ZeroTierToken {
 }
 
 # This function is called by basically everything else here, it's a wrapper to the REST API zerotier provides.
+# TODO: Capitalize first letter of NoteProperty somehow... id -> Id, status -> Status 
 function Invoke-ZeroTierAPI {
     
     param (
         [parameter(
-            Mandatory = $True)]
+            Mandatory)]
         [string]$Path,
-        [parameter(
-            Mandatory = $False)]
+        [parameter()]
         $Body
     )
 
@@ -39,11 +42,11 @@ function Invoke-ZeroTierAPI {
 
     # POST by default, GET if there's no $Body
     $Method = "POST"
-    if ($Body -eq $Null -or $Body -eq "") {
+    if ($Null -eq $Body -or $Body -eq "") {
         $Method = "GET"  
     }
 
-    $args = @{
+    $apiargs = @{
         Uri         = "$Url$Path"
         Headers     = @{ "Authorization" = "Bearer $ZeroTierToken" }
         Method      = $Method
@@ -51,7 +54,7 @@ function Invoke-ZeroTierAPI {
         ContentType = 'application/json'
     }
     
-    Invoke-RestMethod @args
+    Invoke-RestMethod @apiargs
 
 } 
 
@@ -63,9 +66,9 @@ function Get-ZeroTierStatus {
 
     #region Define the VISIBLE properties
     # this is the list of properties visible by default
-    [string[]]$Visible = 'Online','ClusterNode','ReadOnlyMode','Uptime'
-    [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
-  
+    [string[]]$Visible = 'Online', 'ClusterNode', 'ReadOnlyMode', 'Uptime'
+    [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet, $Visible
+
     # add the information about the visible properties to the return value
     $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
     #endregion
@@ -78,8 +81,7 @@ function Get-ZeroTierNetwork {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         [string]$Id
     )
 
@@ -100,9 +102,9 @@ function Get-ZeroTierNetwork {
 
         #region Define the VISIBLE properties
         # this is the list of properties visible by default
-        [string[]]$Visible = 'Id','Description','OnlineMemberCount','AuthorizedMemberCount'
-        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
-  
+        [string[]]$Visible = 'Id', 'Description', 'OnlineMemberCount', 'AuthorizedMemberCount'
+        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet, $Visible
+
         # add the information about the visible properties to the return value
         $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
         #endregion
@@ -118,85 +120,66 @@ function Get-ZeroTierNetwork {
 
 }
 
-# TODO: Split into Set-ZeroTierNetwork and Set-ZeroTierNetworkConfig or not?
 function Set-ZeroTierNetwork {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Name,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Private,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $MulticastLimit,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Description,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Routes,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Rules,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Tags,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Capabilities,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $AuthTokens,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $V4AssignMode,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $V6AssignMode,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Ui,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $RulesSource,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Permissions,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $CapabilitiesByName,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $TagsByName,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Dns,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Config
 
     )
@@ -219,71 +202,71 @@ function Set-ZeroTierNetwork {
         if ($Config) {
 
             # nested config options get overwritten if $Config is piped from another command
-            if ($Name -ne $Null) {
+            if ($Null -ne $Name) {
                 $Config.name = $Name
             }
-            if ($Private -ne $Null) {
+            if ($Null -ne $Private) {
                 $Config.private = $Private
             }
-            if ($MulticastLimit -ne $Null) {
+            if ($Null -ne $MulticastLimit) {
                 $Config.multicastLimit = $MulticastLimit
             }
-            if ($Routes -ne $Null) {
+            if ($Null -ne $Routes) {
                 $Config.routes = $Routes
             }
-            if ($Rules -ne $Null) {
+            if ($Null -ne $Rules) {
                 $Config.rules = $Rules
             }
-            if ($Tags -ne $Null) {
+            if ($Null -ne $Tags) {
                 $Config.tags = $Tags
             }
-            if ($Capabilities -ne $Null) {
+            if ($Null -ne $Capabilities) {
                 $Config.capabilities = $Capabilities
             }
-            if ($AuthTokens -ne $Null) {
+            if ($Null -ne $AuthTokens) {
                 $Config.authTokens = $AuthTokens
             }
-            if ($V4AssignMode -ne $Null) {
+            if ($Null -ne $V4AssignMode) {
                 $Config.v4AssignMode = $V4AssignMode
             }
-            if ($V6AssignMode -ne $Null) {
+            if ($Null -ne $V6AssignMode) {
                 $Config.v6AssignMode = $V6AssignMode
             }
-            if ($Dns -ne $Null) {
+            if ($Null -ne $Dns) {
                 $Config.dns = $Dns
             }
 
             $Body = @{
-                config = $Config
-                description = $Description
-                ui = $Ui
-                tagsByName = $TagsByName
+                config             = $Config
+                description        = $Description
+                ui                 = $Ui
+                tagsByName         = $TagsByName
                 capabilitiesByName = $CapabilitiesByName
-                rulesSource = $RulesSource
-                permissions = $Permissions
+                rulesSource        = $RulesSource
+                permissions        = $Permissions
             }
         }
-        else{
+        else {
             $Body = @{
-                config = @{
-                       name = $Name
-                       private = $Private
-                       multicastLimit = $MulticastLimit
-                       routes = $Routes
-                       rules = $Rules
-                       tags = $Tags
-                       capabilities = $Capabilities
-                       authTokens = $AuthTokens
-                       v4AssignMode = $V4AssignMode
-                       v6AssignMode = $V6AssignMode
-                       dns = $Dns
-                       }
-                description = $Description
-                ui = $Ui
-                tagsByName = $TagsByName
+                config             = @{
+                    name           = $Name
+                    private        = $Private
+                    multicastLimit = $MulticastLimit
+                    routes         = $Routes
+                    rules          = $Rules
+                    tags           = $Tags
+                    capabilities   = $Capabilities
+                    authTokens     = $AuthTokens
+                    v4AssignMode   = $V4AssignMode
+                    v6AssignMode   = $V6AssignMode
+                    dns            = $Dns
+                }
+                description        = $Description
+                ui                 = $Ui
+                tagsByName         = $TagsByName
                 capabilitiesByName = $CapabilitiesByName
-                rulesSource = $RulesSource
-                permissions = $Permissions
+                rulesSource        = $RulesSource
+                permissions        = $Permissions
             }
         
         }
@@ -305,12 +288,12 @@ function Add-ZeroTierMember {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [array]$Node
     )
 
@@ -335,12 +318,11 @@ function Get-ZeroTierMember {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         [string]$Node
     )
 
@@ -361,9 +343,9 @@ function Get-ZeroTierMember {
 
         #region Define the VISIBLE properties
         # this is the list of properties visible by default
-        [string[]]$Visible = 'NodeId','Description','Name','Online'
-        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet,$Visible
-  
+        [string[]]$Visible = 'NodeId', 'Description', 'Name', 'Online'
+        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet, $Visible
+
         # add the information about the visible properties to the return value
         $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
         #endregion
@@ -383,53 +365,43 @@ function Set-ZeroTierMember {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [Alias("nodeId")]
         [string]$Node,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Hidden,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Name,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Description,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $OfflineNotifyDelay,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Config,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Authorized,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $Capabilities,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $IpAssignments,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $NoAutoAssignIps,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $NetworkId
     )
 
@@ -449,42 +421,42 @@ function Set-ZeroTierMember {
 
         if ($Config) {
             # nested config options get overwritten if $Config is piped from another command
-            if ($Authorized -ne $Null) {
+            if ($Null -ne $Authorized) {
                 $Config.authorized = $Authorized
             }
-            if ($Capabilities -ne $Null) {
+            if ($Null -ne $Capabilities) {
                 $Config.capabilities = $Capabilities
             }
-            if ($Tags -ne $Null) {
+            if ($Null -ne $Tags) {
                 $Config.tags = $Tags
             }
-            if ($IpAssignments -ne $Null) {
+            if ($Null -ne $IpAssignments) {
                 $Config.ipAssignments = $IpAssignments
             }
-            if ($OfflineNotifyDelay -ne $Null) {
+            if ($Null -ne $OfflineNotifyDelay) {
                 $Config.offlineNotifyDelay = $OfflineNotifyDelay
             }
 
             $Body = @{
-                config = $Config
-                description = $Description
-                hidden = $Hidden
-                name = $Name
+                config             = $Config
+                description        = $Description
+                hidden             = $Hidden
+                name               = $Name
                 offlineNotifyDelay = $OfflineNotifyDelay
             }
         }
-        else{
+        else {
             $Body = @{
-                config = @{
-                       authorized = $Authorized
-                       capabilities = $Capabilities
-                       tags = $Tags
-                       ipAssignments = $IpAssignments
-                       noAutoAssignIps = $NoAutoAssignIps
-                       }
-                description = $Description
-                hidden = $Hidden
-                name = $Name
+                config             = @{
+                    authorized      = $Authorized
+                    capabilities    = $Capabilities
+                    tags            = $Tags
+                    ipAssignments   = $IpAssignments
+                    noAutoAssignIps = $NoAutoAssignIps
+                }
+                description        = $Description
+                hidden             = $Hidden
+                name               = $Name
                 offlineNotifyDelay = $OfflineNotifyDelay
             }
         
@@ -508,26 +480,25 @@ function Enable-ZeroTierMember {
 
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [Alias("nodeId")]
         [string]$Node,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $NetworkId
-        )
+    )
 
-        # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
-        if ($NetworkID) {
-            $Id = $NetworkId
-        }
+    # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
+    if ($NetworkID) {
+        $Id = $NetworkId
+    }
 
-        Set-ZeroTierMember -id $Id -node $Node -authorized $True
+    Set-ZeroTierMember -id $Id -node $Node -authorized $True
 
 }
 
@@ -535,25 +506,24 @@ function Disable-ZeroTierMember {
 
     param (
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [string]$Id,
         [parameter(
-            Mandatory = $True,
-            ValueFromPipelineByPropertyName = $True)]
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
         [Alias("nodeId")]
         [string]$Node,
         [parameter(
-            Mandatory = $False,
-            ValueFromPipelineByPropertyName = $True)]
+            ValueFromPipelineByPropertyName)]
         $NetworkId
-        )
+    )
 
-        # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
-        if ($NetworkID) {
-            $Id = $NetworkId
-        }
+    # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
+    if ($NetworkID) {
+        $Id = $NetworkId
+    }
 
-        Set-ZeroTierMember -id $Id -node $Node -authorized $False
+    Set-ZeroTierMember -id $Id -node $Node -authorized $False
 
 }
