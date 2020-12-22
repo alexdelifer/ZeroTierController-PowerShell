@@ -25,8 +25,108 @@ function Get-ZeroTierToken {
 
 }
 
-# This function is called by basically everything else here, it's a wrapper to the REST API zerotier provides.
-# TODO: Capitalize first letter of NoteProperty somehow... id -> Id, status -> Status 
+# Support Functions
+# TODO: Figure out how to not expose these, I think we can do that with the manifest :)
+function ConvertTo-PascalCase {
+    [CmdletBinding()]
+    param (
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+        [string]
+        $String
+    )
+    # Not the best, but want to preserve AllowUpperCase inside of words, .ToTitleCase doesn't preserve that
+    $String.substring(0, 1).toupper() + $String.substring(1)
+}
+
+function ConvertTo-CamelCase {
+    [CmdletBinding()]
+    param (
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+        [string]
+        $String
+    )
+    $String.substring(0, 1).tolower() + $String.substring(1)
+}
+
+
+function ConvertTo-PascalCaseProperty {
+    [CmdletBinding()]
+    param (
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+        [pscustomobject]
+        $Object
+    )
+
+    $Object = [pscustomobject]$Object
+    
+    $Object | ForEach-Object {
+        $NewObject = [ordered]@{}
+        $_.psobject.properties | ForEach-Object {
+            $NewPropertyName = $_.Name | ConvertTo-PascalCase
+            $NewObject[$NewPropertyName] = $_.Value
+
+            # Let's get recursive :)
+            Write-Debug $_.TypeNameOfValue 
+            if ($_.TypeNameOfValue -eq "System.Management.Automation.PSCustomObject" `
+                    -or $_.TypeNameOfValue -eq "System.Collections.Hashtable" ) {
+                $NewObject[$NewPropertyName] = $_.Value | ConvertTo-PascalCaseProperty
+            }
+            <#             elseif ($_.TypeNameOfValue -eq "System.Object[]" ) {
+                $NewObject[$NewPropertyName] = [object[]]$_.Value | ForEach-Object { $_ | ConvertTo-PascalCaseProperty }
+            } #>
+
+        }
+        # Output
+        [pscustomobject]$NewObject
+
+    }
+}
+
+function ConvertTo-CamelCaseProperty {
+    [CmdletBinding()]
+    param (
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName)]
+        [pscustomobject]
+        $Object
+    )
+
+    $Object = [pscustomobject]$Object
+    
+    $Object | ForEach-Object {
+        $NewObject = [ordered]@{}
+        $_.psobject.properties | ForEach-Object {
+            $NewPropertyName = $_.Name | ConvertTo-CamelCase
+            $NewObject[$NewPropertyName] = $_.Value
+
+            # Let's get recursive :)
+            Write-Debug $_.TypeNameOfValue 
+            if ($_.TypeNameOfValue -eq "System.Management.Automation.PSCustomObject" `
+                    -or $_.TypeNameOfValue -eq "System.Collections.Hashtable" ) {
+                $NewObject[$NewPropertyName] = $_.Value | ConvertTo-CamelCaseProperty
+            }
+            <#             elseif ($_.TypeNameOfValue -eq "System.Object[]" ) {
+                $NewObject[$NewPropertyName] = $_.Value | ForEach-Object { $_ | ConvertTo-CamelCaseProperty }
+            } #>
+
+        }
+        # Output
+        [pscustomobject]$NewObject
+
+    }
+}
+
 function Invoke-ZeroTierAPI {
     
     param (
@@ -41,9 +141,17 @@ function Invoke-ZeroTierAPI {
     $ZeroTierToken = Get-ZeroTierToken
 
     # POST by default, GET if there's no $Body
-    $Method = "POST"
     if ($Null -eq $Body -or $Body -eq "") {
-        $Method = "GET"  
+        $Method = "GET"
+    }
+    else {
+        Write-Debug "Pre $($Body | ConvertTo-Json -Depth 10)"
+        $Method = "POST"
+        # Sanitize our inputs
+        [PSCustomObject]$Body = $Body | ForEach-Object { $_ | ConvertTo-CamelCaseProperty } 
+        #$Body = $Body.SyncRoot
+        $Body = $Body | ConvertTo-Json -Depth 10
+        Write-Debug "Post $Body"
     }
 
     $apiargs = @{
@@ -54,7 +162,11 @@ function Invoke-ZeroTierAPI {
         ContentType = 'application/json'
     }
     
-    Invoke-RestMethod @apiargs
+
+    # Do the magic
+    $Output = Invoke-RestMethod @apiargs
+    # Clean up the output
+    [PSCustomObject]$Output | ForEach-Object { $_ | ConvertTo-PascalCaseProperty }
 
 } 
 
@@ -98,7 +210,7 @@ function Get-ZeroTierNetwork {
             $Path = "/network"
         }
 
-        [array]$Return = Invoke-ZeroTierAPI $Path
+        [pscustomobject]$Return = Invoke-ZeroTierAPI $Path
 
         #region Define the VISIBLE properties
         # this is the list of properties visible by default
@@ -110,7 +222,7 @@ function Get-ZeroTierNetwork {
         #endregion
 
 
-        Return [array]$Return
+        Return $Return
 
     }
 
@@ -190,7 +302,6 @@ function Set-ZeroTierNetwork {
 
     Process {
         Write-Debug "PROCESS: Set-ZeroTierNetwork"
-
         # require network id to modify
         $Path = "/network/$Id"
         if ($Id -eq "" -or $Id -eq $Null) {
@@ -199,82 +310,31 @@ function Set-ZeroTierNetwork {
         }
         # https://my.zerotier.com/central-api.html#network-network-post
 
-        if ($Config) {
+        $Body = @{}
+        # Config
+        if ($Null -ne $Name) { $Body.Config += @{Name = $Name } }
+        if ($Null -ne $Private) { $Body.Config += @{Private = $Private } }
+        if ($Null -ne $MulticastLimit) { $Body.Config += @{MulticastLimit = $MulticastLimit } }
+        if ($Null -ne $Routes) { $Body.Config += @{Routes = $Routes } }
+        if ($Null -ne $Rules) { $Body.Config += @{Rules = $Rules } }
+        if ($Null -ne $Tags) { $Body.Config += @{Tags = $Tags } }
+        if ($Null -ne $Capabilities) { $Body.Config += @{Capabilities = $Capabilities } }
+        if ($Null -ne $AuthTokens) { $Body.Config += @{AuthTokens = $AuthTokens } }
+        if ($Null -ne $V4AssignMode) { $Body.Config += @{V4AssignMode = $V4AssignMode } }
+        if ($Null -ne $V6AssignMode) { $Body.Config += @{V6AssignMode = $V6AssignMode } }
+        if ($Null -ne $Dns) { $Body.Config += @{Dns = $Dns } }
+        # Main
+        if ($Null -ne $Description) { $Body.Description += $Description }
+        if ($Null -ne $Ui) { $Body.Ui += $Ui }
+        if ($Null -ne $TagsByName) { $Body.TagsByName += $TagsByName }
+        if ($Null -ne $CapabilitiesByName) { $Body.CapabilitiesByName += $CapabilitiesByName }
+        if ($Null -ne $RulesSource) { $Body.RulesSource += $RulesSource }
+        if ($Null -ne $Permissions) { $Body.Permissions += $Permissions }
 
-            # nested config options get overwritten if $Config is piped from another command
-            if ($Null -ne $Name) {
-                $Config.name = $Name
-            }
-            if ($Null -ne $Private) {
-                $Config.private = $Private
-            }
-            if ($Null -ne $MulticastLimit) {
-                $Config.multicastLimit = $MulticastLimit
-            }
-            if ($Null -ne $Routes) {
-                $Config.routes = $Routes
-            }
-            if ($Null -ne $Rules) {
-                $Config.rules = $Rules
-            }
-            if ($Null -ne $Tags) {
-                $Config.tags = $Tags
-            }
-            if ($Null -ne $Capabilities) {
-                $Config.capabilities = $Capabilities
-            }
-            if ($Null -ne $AuthTokens) {
-                $Config.authTokens = $AuthTokens
-            }
-            if ($Null -ne $V4AssignMode) {
-                $Config.v4AssignMode = $V4AssignMode
-            }
-            if ($Null -ne $V6AssignMode) {
-                $Config.v6AssignMode = $V6AssignMode
-            }
-            if ($Null -ne $Dns) {
-                $Config.dns = $Dns
-            }
-
-            $Body = @{
-                config             = $Config
-                description        = $Description
-                ui                 = $Ui
-                tagsByName         = $TagsByName
-                capabilitiesByName = $CapabilitiesByName
-                rulesSource        = $RulesSource
-                permissions        = $Permissions
-            }
-        }
-        else {
-            $Body = @{
-                config             = @{
-                    name           = $Name
-                    private        = $Private
-                    multicastLimit = $MulticastLimit
-                    routes         = $Routes
-                    rules          = $Rules
-                    tags           = $Tags
-                    capabilities   = $Capabilities
-                    authTokens     = $AuthTokens
-                    v4AssignMode   = $V4AssignMode
-                    v6AssignMode   = $V6AssignMode
-                    dns            = $Dns
-                }
-                description        = $Description
-                ui                 = $Ui
-                tagsByName         = $TagsByName
-                capabilitiesByName = $CapabilitiesByName
-                rulesSource        = $RulesSource
-                permissions        = $Permissions
-            }
-        
-        }
-
-        [array]$Return = Invoke-ZeroTierAPI $Path ($Body | ConvertTo-Json -Depth 10)
+        Write-Debug ($Body | ConvertTo-Json -Depth 10 )
+        [array]$Return = Invoke-ZeroTierAPI -Path $Path -Body $Body
         Return [array]$Return
         
-
     }
 
     End {
@@ -418,52 +478,26 @@ function Set-ZeroTierMember {
         if ($NetworkID) {
             $Path = "/network/$NetworkId/member/$Node" 
         }
+        $Body = @{}
+        # Config
+        if ($Null -ne $Authorized) { $Body.Config += @{Authorized = $Authorized } }
+        if ($Null -ne $Capabilities) { $Body.Config += @{Capabilities = $Capabilities } }
+        if ($Null -ne $Tags) { $Body.Config += @{Tags = $Tags } }
+        if ($Null -ne $IpAssignments) { $Body.Config += @{IpAssignments = $IpAssignments } }
+        if ($Null -ne $NoAutoAssignIps) { $Body.Config += @{NoAutoAssignIps = $NoAutoAssignIps } }
+        # Main
+        if ($Null -ne $Description) { $Body.Description += $Description }
+        if ($Null -ne $Hidden) { $Body.Hidden += $Hidden }
+        if ($Null -ne $Name) { $Body.Name += $Name }
+        if ($Null -ne $OfflineNotifyDelay) { $Body.OfflineNotifyDelay += $OfflineNotifyDelay }
 
-        if ($Config) {
-            # nested config options get overwritten if $Config is piped from another command
-            if ($Null -ne $Authorized) {
-                $Config.authorized = $Authorized
-            }
-            if ($Null -ne $Capabilities) {
-                $Config.capabilities = $Capabilities
-            }
-            if ($Null -ne $Tags) {
-                $Config.tags = $Tags
-            }
-            if ($Null -ne $IpAssignments) {
-                $Config.ipAssignments = $IpAssignments
-            }
-            if ($Null -ne $OfflineNotifyDelay) {
-                $Config.offlineNotifyDelay = $OfflineNotifyDelay
-            }
 
-            $Body = @{
-                config             = $Config
-                description        = $Description
-                hidden             = $Hidden
-                name               = $Name
-                offlineNotifyDelay = $OfflineNotifyDelay
-            }
-        }
-        else {
-            $Body = @{
-                config             = @{
-                    authorized      = $Authorized
-                    capabilities    = $Capabilities
-                    tags            = $Tags
-                    ipAssignments   = $IpAssignments
-                    noAutoAssignIps = $NoAutoAssignIps
-                }
-                description        = $Description
-                hidden             = $Hidden
-                name               = $Name
-                offlineNotifyDelay = $OfflineNotifyDelay
-            }
-        
-        }
+        Write-Debug ($Body | ConvertTo-Json)
+        [pscustomobject]$Return = Invoke-ZeroTierAPI -Path $Path -Body $Body
 
-        [array]$Return = Invoke-ZeroTierAPI $Path ($Body | ConvertTo-Json -Depth 10)
-        Return [array]$Return
+        #[PSCustomObject]$PSBoundParameters
+
+        Return [pscustomobject]$Return
 
     }
 
