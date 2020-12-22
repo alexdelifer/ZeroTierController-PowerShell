@@ -9,24 +9,33 @@
 
 # Internal Functions
 
-function Get-ZeroTierToken {
+function Get-ZTToken {
     
     if ( Test-Path $TokenPath ) {
-        [string]$ZeroTierToken = Get-Content $TokenPath
+        $ZTToken = Get-Content $TokenPath | ConvertTo-SecureString -Force
     }
     else {
-    
         Write-Host -ForegroundColor Red "No API token found, please populate $TokenPath with an API token."
         Throw (Get-Content $TokenPath)
-
     }
+    # Resolving securestrings is intentionally obtuse 
+    $creds = New-Object System.Management.Automation.PsCredential -ArgumentList "ZEROTIER TOKEN", $ZTToken
+    $creds.GetNetworkCredential().Password
+}
 
-    return [string]$ZeroTierToken
-
+function Set-ZTToken {
+    [CmdletBinding()]
+    param (
+        [Parameter()]
+        [string]
+        $Token
+    )
+    [securestring]$SecureToken = $Token | ConvertTo-SecureString -AsPlainText -Force
+    $SecureToken | ConvertFrom-SecureString | Set-Content -Path $TokenPath
+    
 }
 
 # Support Functions
-# TODO: Figure out how to not expose these, I think we can do that with the manifest :)
 function ConvertTo-PascalCase {
     [CmdletBinding()]
     param (
@@ -127,26 +136,21 @@ function ConvertTo-CamelCaseProperty {
     }
 }
 
-function Invoke-ZeroTierAPI {
+function Invoke-ZTAPI {
     
     param (
         [parameter(
             Mandatory)]
         [string]$Path,
         [parameter()]
-        $Body
+        $Body,
+        [parameter()]
+        [string]$Method = "GET"
     )
 
-    # get the token each time we access zerotier
-    $ZeroTierToken = Get-ZeroTierToken
-
-    # POST by default, GET if there's no $Body
-    if ($Null -eq $Body -or $Body -eq "") {
-        $Method = "GET"
-    }
-    else {
+    if ($Body) {
         Write-Debug "Pre $($Body | ConvertTo-Json -Depth 10)"
-        $Method = "POST"
+        #$Method = "POST"
         # Sanitize our inputs
         [PSCustomObject]$Body = $Body | ForEach-Object { $_ | ConvertTo-CamelCaseProperty } 
         #$Body = $Body.SyncRoot
@@ -156,25 +160,33 @@ function Invoke-ZeroTierAPI {
 
     $apiargs = @{
         Uri         = "$Url$Path"
-        Headers     = @{ "Authorization" = "Bearer $ZeroTierToken" }
+        Headers     = @{ "Authorization" = "Bearer $(Get-ZTToken)" }
         Method      = $Method
         Body        = $Body
         ContentType = 'application/json'
+        ErrorAction = 'Stop'
     }
     
 
-    # Do the magic
-    $Output = Invoke-RestMethod @apiargs
-    # Clean up the output
-    [PSCustomObject]$Output | ForEach-Object { $_ | ConvertTo-PascalCaseProperty }
+    try {
+        # Do the magic
+        $Output = Invoke-RestMethod @apiargs
+        # Clean up the output
+        [PSCustomObject]$Output | ForEach-Object { $_ | ConvertTo-PascalCaseProperty }
+    }
+    catch {
+        Write-Error "There was an issue with the ZeroTier API"
+        Throw
+    }
+
 
 } 
 
 # Public Functions
 
-function Get-ZeroTierStatus {
+function Get-ZTStatus {
 
-    [array]$Return = Invoke-ZeroTierAPI '/status'
+    [array]$Return = Invoke-ZTAPI '/status'
 
     #region Define the VISIBLE properties
     # this is the list of properties visible by default
@@ -189,7 +201,7 @@ function Get-ZeroTierStatus {
 
 }
 
-function Get-ZeroTierNetwork {
+function Get-ZTNetwork {
     [cmdletbinding()]
     param (
         [parameter(
@@ -198,11 +210,11 @@ function Get-ZeroTierNetwork {
     )
 
     Begin {
-        Write-Debug "BEGIN: Get-ZeroTierNetwork"
+        Write-Debug "BEGIN: Get-ZTNetwork"
     }
 
     Process {
-        Write-Debug "PROCESS: Get-ZeroTierNetwork"
+        Write-Debug "PROCESS: Get-ZTNetwork"
 
         # if no network is provided, zerotier will return all networks.
         $Path = "/network/$Id"
@@ -210,7 +222,7 @@ function Get-ZeroTierNetwork {
             $Path = "/network"
         }
 
-        [pscustomobject]$Return = Invoke-ZeroTierAPI $Path
+        [pscustomobject]$Return = Invoke-ZTAPI -Path $Path -Method "GET"
 
         #region Define the VISIBLE properties
         # this is the list of properties visible by default
@@ -227,12 +239,12 @@ function Get-ZeroTierNetwork {
     }
 
     End {
-        Write-Debug "END: Get-ZeroTierNetwork"
+        Write-Debug "END: Get-ZTNetwork"
     }
 
 }
 
-function Set-ZeroTierNetwork {
+function Set-ZTNetwork {
     [cmdletbinding()]
     param (
         [parameter(
@@ -297,15 +309,15 @@ function Set-ZeroTierNetwork {
     )
 
     Begin {
-        Write-Debug "BEGIN: Set-ZeroTierNetwork"
+        Write-Debug "BEGIN: Set-ZTNetwork"
     }
 
     Process {
-        Write-Debug "PROCESS: Set-ZeroTierNetwork"
+        Write-Debug "PROCESS: Set-ZTNetwork"
         # require network id to modify
         $Path = "/network/$Id"
         if ($Id -eq "" -or $Id -eq $Null) {
-            Write-Host "ID Required for Set-ZeroTierNetwork"
+            Write-Host "ID Required for Set-ZTNetwork"
             Break
         }
         # https://my.zerotier.com/central-api.html#network-network-post
@@ -332,96 +344,81 @@ function Set-ZeroTierNetwork {
         if ($Null -ne $Permissions) { $Body.Permissions += $Permissions }
 
         Write-Debug ($Body | ConvertTo-Json -Depth 10 )
-        [array]$Return = Invoke-ZeroTierAPI -Path $Path -Body $Body
-        Return [array]$Return
+        $Return = Invoke-ZTAPI -Path $Path -Body $Body -Method "POST"
+        Return $Return
         
     }
 
     End {
-        Write-Debug "END: Set-ZeroTierNetwork"
+        Write-Debug "END: Set-ZTNetwork"
     }
-
 }
 
-# TODO: Fix this
-function Add-ZeroTierMember {
+function New-ZTNetwork {
     [cmdletbinding()]
     param (
         [parameter(
-            Mandatory,
             ValueFromPipelineByPropertyName)]
-        [string]$Id,
+        $Name,
         [parameter(
-            Mandatory,
             ValueFromPipelineByPropertyName)]
-        [array]$Node
+        $Private,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $MulticastLimit,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Description,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Routes,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Rules,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Tags,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Capabilities,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $AuthTokens,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $V4AssignMode,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $V6AssignMode,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Ui,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $RulesSource,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Permissions,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $CapabilitiesByName,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $TagsByName,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Dns,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Config
     )
 
-    Begin {
-        Write-Debug "BEGIN: Add-ZeroTierMember"
-    }
-
-    Process {
-        Write-Debug "PROCESS: Add-ZeroTierMember"
-
-        Set-ZeroTierNetwork -id $Id -authTokens $Node
-
-    }
-
-    End {
-        Write-Debug "END: Add-ZeroTierMember"
-    }
-
+    $Path = "/network"
+    Invoke-ZTAPI -Path $Path -Method "POST"
+    #$NewNetwork | Set-ZTNetwork @PSBoundParameters
 }
 
-function Get-ZeroTierMember {
-    [cmdletbinding()]
-    param (
-        [parameter(
-            Mandatory,
-            ValueFromPipelineByPropertyName)]
-        [string]$Id,
-        [parameter(
-            ValueFromPipelineByPropertyName)]
-        [string]$Node
-    )
-
-    Begin {
-        Write-Debug "BEGIN: Get-ZeroTierMember"
-    }
-
-    Process {
-        Write-Debug "PROCESS: Get-ZeroTierMember"
-
-        # if no node is provided, zerotier will return all members.
-        $Path = "/network/$Id/member/$Node"
-        if ($Node -eq "" -or $Node -eq $Null) {
-            $Path = "/network/$Id/member"
-        }
-        
-        [array]$Return = Invoke-ZeroTierAPI $Path
-
-        #region Define the VISIBLE properties
-        # this is the list of properties visible by default
-        [string[]]$Visible = 'NodeId', 'Description', 'Name', 'Online'
-        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet, $Visible
-
-        # add the information about the visible properties to the return value
-        $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
-        #endregion
-
-        Return [array]$Return
-
-    }
-
-    End {
-        Write-Debug "END: Get-ZeroTierMember"
-    }
-
-
-}
-
-function Set-ZeroTierMember {
+function Add-ZTMember {
     [cmdletbinding()]
     param (
         [parameter(
@@ -466,14 +463,160 @@ function Set-ZeroTierMember {
     )
 
     Begin {
-        Write-Debug "BEGIN: Set-ZeroTierMember"
+        Write-Debug "BEGIN: Add-ZTMember"
+    }
+
+    Process {
+        Write-Debug "PROCESS: Add-ZTMember"
+
+        $null = Set-ZTNetwork -Id $Id -AuthTokens @($Node)
+        Set-ZTMember @PSBoundParameters
+
+    }
+
+    End {
+        Write-Debug "END: Add-ZTMember"
+    }
+}
+
+function Remove-ZTMember {
+    [cmdletbinding()]
+    param (
+        [parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
+        [string]$Id,
+        [parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
+        [Alias("nodeId")]
+        [string]$Node,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $NetworkId
+    )
+
+    Begin {
+        Write-Debug "BEGIN: Add-ZTMember"
+    }
+
+    Process {
+        Write-Debug "PROCESS: Add-ZTMember"
+
+        $memberargs = @{
+            Hidden        = $True
+            Authorized    = $False
+            IpAssignments = @{}
+        }
+        Set-ZTMember @PSBoundParameters @memberargs
+
+    }
+
+    End {
+        Write-Debug "END: Add-ZTMember"
+    }
+}
+
+function Get-ZTMember {
+    [cmdletbinding()]
+    param (
+        [parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
+        [string]$Id,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        [string]$Node
+    )
+
+    Begin {
+        Write-Debug "BEGIN: Get-ZTMember"
+    }
+
+    Process {
+        Write-Debug "PROCESS: Get-ZTMember"
+
+        # if no node is provided, zerotier will return all members.
+        $Path = "/network/$Id/member/$Node"
+        if ($Node -eq "" -or $Node -eq $Null) {
+            $Path = "/network/$Id/member"
+        }
+        
+        $Return = Invoke-ZTAPI -Path $Path -Method "GET"
+
+        #region Define the VISIBLE properties
+        # this is the list of properties visible by default
+        [string[]]$Visible = 'NodeId', 'Description', 'Name', 'Online'
+        [System.Management.Automation.PSMemberInfo[]]$Info = New-Object System.Management.Automation.PSPropertySet DefaultDisplayPropertySet, $Visible
+
+        # add the information about the visible properties to the return value
+        $Return | Add-Member -MemberType MemberSet -Name PSStandardMembers -Value $Info
+        #endregion
+
+        Return [array]$Return
+
+    }
+
+    End {
+        Write-Debug "END: Get-ZTMember"
+    }
+
+
+}
+
+function Set-ZTMember {
+    [cmdletbinding()]
+    param (
+        [parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
+        [string]$Id,
+        [parameter(
+            Mandatory,
+            ValueFromPipelineByPropertyName)]
+        [Alias("nodeId")]
+        [string]$Node,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Hidden,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Name,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Description,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $OfflineNotifyDelay,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Config,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Authorized,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $Capabilities,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $IpAssignments,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $NoAutoAssignIps,
+        [parameter(
+            ValueFromPipelineByPropertyName)]
+        $NetworkId
+    )
+
+    Begin {
+        Write-Debug "BEGIN: Set-ZTMember"
 
     }
 
     Process {
-        Write-Debug "PROCESS: Set-ZeroTierMember"
+        Write-Debug "PROCESS: Set-ZTMember"
 
-        # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
+        # if we're piping from Get-ZTMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
         $Path = "/network/$Id/member/$Node"
         if ($NetworkID) {
             $Path = "/network/$NetworkId/member/$Node" 
@@ -493,7 +636,7 @@ function Set-ZeroTierMember {
 
 
         Write-Debug ($Body | ConvertTo-Json)
-        [pscustomobject]$Return = Invoke-ZeroTierAPI -Path $Path -Body $Body
+        [pscustomobject]$Return = Invoke-ZTAPI -Path $Path -Body $Body -Method "POST"
 
         #[PSCustomObject]$PSBoundParameters
 
@@ -502,7 +645,7 @@ function Set-ZeroTierMember {
     }
 
     End {
-        Write-Debug "END: Set-ZeroTierMember"
+        Write-Debug "END: Set-ZTMember"
     }
 
 
@@ -510,7 +653,7 @@ function Set-ZeroTierMember {
 
 # Shortcuts
 
-function Enable-ZeroTierMember {
+function Enable-ZTMember {
 
     param (
         [parameter(
@@ -527,16 +670,16 @@ function Enable-ZeroTierMember {
         $NetworkId
     )
 
-    # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
+    # if we're piping from Get-ZTMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
     if ($NetworkID) {
         $Id = $NetworkId
     }
 
-    Set-ZeroTierMember -id $Id -node $Node -authorized $True
+    Set-ZTMember -id $Id -node $Node -authorized $True
 
 }
 
-function Disable-ZeroTierMember {
+function Disable-ZTMember {
 
     param (
         [parameter(
@@ -553,11 +696,11 @@ function Disable-ZeroTierMember {
         $NetworkId
     )
 
-    # if we're piping from Get-ZeroTierMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
+    # if we're piping from Get-ZTMember, the networkId is the trusted Id as $Id will be overloaded with a contatenation of the networkid and the node id :(
     if ($NetworkID) {
         $Id = $NetworkId
     }
 
-    Set-ZeroTierMember -id $Id -node $Node -authorized $False
+    Set-ZTMember -id $Id -node $Node -authorized $False
 
 }

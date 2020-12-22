@@ -1,22 +1,25 @@
 @{
     RootModule        = 'ZeroTierController.psm1'
-    ModuleVersion     = '1.0'
+    ModuleVersion     = '1.1'
     GUID              = '66556311-ed05-4b5c-95c8-5e7d027d78e3'
     Author            = 'Alex Delifer'
     Description       = 'Interact with the ZeroTier Controller API from PowerShell'
     FunctionsToExport = @(
-        "Disable-ZeroTierMember",
-        "Enable-ZeroTierMember",
-        "Get-ZeroTierMember",
-        "Get-ZeroTierNetwork",
-        "Get-ZeroTierStatus",
-        "Set-ZeroTierMember",
-        "Set-ZeroTierNetwork"
+        "Add-ZTMember",
+        "Remove-ZTMember",
+        "Disable-ZTMember",
+        "Enable-ZTMember",
+        "Get-ZTMember",
+        "Get-ZTNetwork",
+        "Get-ZTStatus",
+        "Set-ZTMember",
+        "Set-ZTNetwork",
+        "Set-ZTToken"
     )
     PrivateData       = @{
         PSData = @{
             ProjectUri   = 'https://github.com/alexdelifer/ZeroTierController-PowerShell'
-            ReleaseNotes = 'Version 1'
+            ReleaseNotes = 'ZeroTier is cool'
         }
     }
 }
