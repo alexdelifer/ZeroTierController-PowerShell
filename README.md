@@ -10,22 +10,31 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 - Get/Set/Add/Remove -ZeroTierUser
 - New-ZTNetwork (The API seems broken on this front...)
 - Help documentation...
-- Once I'm happy with it, I'll upload it to the PSGallery.
 
 ## Getting Started
 
 1. Get an API Token from [ZeroTier](https://my.zerotier.com/account)
-1. Enter that API Token into a new file you create in your home directory called `.zerotier-api-token`
+1. Install the Module:  
+
+    ```PowerShell
+    Install-Module -Name ZeroTierController 
+    ```
+
+1. Import the Module:  
+
+    ```PowerShell
+    Import-Module -Name ZeroTierController
+    ```
+
+1. Set the API token using the following command.
 
     ```PowerShell
     Set-ZTToken -Token "YOUR_API_KEY_HERE"
     ```
 
-1. Clone this repository to a directory of your choosing.
-1. Use `Import-Module .\ZeroTierController.psd1` in a PowerShell window or a script to use the included commands.
-
 ## Commands
 
+- `Set-ZTToken`
 - `Get-ZTStatus`
 - `Get-ZTNetwork`
 - `Set-ZTNetwork`
