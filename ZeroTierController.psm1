@@ -10,23 +10,33 @@
 # Internal Functions
 
 function Get-ZTToken {
-    
-    if ( Test-Path $TokenPath ) {
-        $ZTToken = Get-Content $TokenPath | ConvertTo-SecureString -Force
+    try {
+        if ( Test-Path $TokenPath ) {
+            $ZTToken = Get-Content $TokenPath | ConvertTo-SecureString -Force
+        }
+        else {
+            Write-Host "Please provide an API Key"
+            Write-Host "See https://my.zerotier.com/account for more info."
+            Write-Error "No API token found, please provide an API token." -ErrorAction Stop
+        }
+        # Resolving securestrings is intentionally obtuse 
+        $creds = New-Object System.Management.Automation.PsCredential -ArgumentList "ZEROTIER TOKEN", $ZTToken
+        $creds.GetNetworkCredential().Password
     }
-    else {
-        Write-Host -ForegroundColor Red "No API token found, please populate $TokenPath with an API token."
-        Throw (Get-Content $TokenPath)
+    catch {
+        Set-ZTToken
+        Get-ZTToken
     }
-    # Resolving securestrings is intentionally obtuse 
-    $creds = New-Object System.Management.Automation.PsCredential -ArgumentList "ZEROTIER TOKEN", $ZTToken
-    $creds.GetNetworkCredential().Password
 }
 
 function Set-ZTToken {
     [CmdletBinding()]
     param (
-        [Parameter()]
+        [Parameter(
+            Mandatory,
+            ValueFromPipeline,
+            ValueFromPipelineByPropertyName
+        )]
         [string]
         $Token
     )
