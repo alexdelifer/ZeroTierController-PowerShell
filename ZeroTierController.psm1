@@ -24,6 +24,4 @@ Foreach ($import in @($Public + $Private)) {
 [string]$Url = "https://my.zerotier.com/api"
 [string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
 
-Get-Command "*-ZT*"
-
 Export-ModuleMember -Function $Public.Basename
