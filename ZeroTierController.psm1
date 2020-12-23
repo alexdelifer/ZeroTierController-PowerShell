@@ -24,4 +24,6 @@ Foreach ($import in @($Public + $Private)) {
 [string]$Url = "https://my.zerotier.com/api"
 [string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
 
+# Control what's exposed thru the psd1
 Export-ModuleMember -Function $Public.Basename
+Export-ModuleMember -Function $Private.Basename
