@@ -27,16 +27,30 @@ function Set-ZTUser {
     )
     $Path = "/network/$Id/users"
 
+    $CurrentPermissions = (Get-ZTUser -Id $Id -UserId $UserId).Permissions
+
     $Body = @{
         Id = $UserId
     }
 
-    if (!$Permissions) {
-        $Permissions = (Get-ZTUser -Id $Id -UserId $UserId).Permissions
+    if ($null -eq $Permissions) {
+        if ($null -ne $CurrentPermissions) { $Permissions = $CurrentPermissions }
+        else {
+            # Default Permissions
+            $Permissions = [pscustomobject]@{
+                #string          = "something"
+                addUserDisabled = $false
+                A               = $true 
+                D               = $true
+                M               = $true
+                R               = $true 
+            } 
+        }
     }
 
     # Expand the passed properties in the $body
     $Permissions.PSObject.Properties | ForEach-Object {
+        #$_
         $Body.($_.Name) = $_.Value
     }  
 
@@ -45,6 +59,7 @@ function Set-ZTUser {
     if ($Null -ne $AllowModify) { $Body.M = $AllowModify }
     if ($Null -ne $AllowDelete) { $Body.D = $AllowDelete } 
 
+    # The returned value is just what we sent it...
     $null = Invoke-ZTAPI -Path $Path -Method "POST" -Body $Body
 
     # Lie and get the latest user thru get, just like the webui

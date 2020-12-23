@@ -7,7 +7,6 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 
 ## WIP / TODO
 
-- (Add,Remove)-ZTUser
 - Ability to specify API endpoint
 - Help documentation...
 
@@ -50,8 +49,8 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 - `Remove-ZTMember`
 - `Get-ZTUser`
 - `Set-ZTUser`
-- `Add-ZTUser` (Coming Soon)
-- `Remove-ZTUser` (Coming Soon)
+- `Add-ZTUser`
+- `Remove-ZTUser`
 
 ## Usage
 

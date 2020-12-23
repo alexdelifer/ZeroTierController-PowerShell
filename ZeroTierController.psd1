@@ -6,8 +6,10 @@
     Description       = 'Interact with the ZeroTier Controller API from PowerShell'
     FunctionsToExport = @(
         "Add-ZTMember",
+        "Add-ZTUser",
         "Remove-ZTMember",
         "Remove-ZTNetwork",
+        "Remove-ZTUser",
         "Disable-ZTMember",
         "Enable-ZTMember",
         "Get-ZTToken",

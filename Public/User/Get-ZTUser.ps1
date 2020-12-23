@@ -14,8 +14,9 @@ function Get-ZTUser {
     # you cannot specify a user on the per network users endpoint
     #$Path = "/network/$Id/users/$UserId"
 
+    try { $Return = Invoke-ZTAPI -Path $Path -Method "GET" -ErrorAction Stop }
+    catch {throw}
     
-    $Return = Invoke-ZTAPI -Path $Path -Method "GET"
 
     # The users seem to be stored in a weird table where the userId is a property.
     # Let's expand that to make it more usable.
