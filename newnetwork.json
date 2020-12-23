@@ -1,0 +1,34 @@
+{
+    "config": {
+        "name": "sleepy_draper",
+        "private": true,
+        "v6AssignMode": {
+            "rfc4193": false,
+            "6plane": false
+        },
+        "v4AssignMode": {
+            "zt": true
+        },
+        "routes": [
+            {
+                "target": "10.241.0.0/16",
+                "via": null,
+                "flags": 0,
+                "metric": 0
+            }
+        ],
+        "ipAssignmentPools": [
+            {
+                "ipRangeStart": "10.241.0.1",
+                "ipRangeEnd": "10.241.255.254"
+            }
+        ],
+        "enableBroadcast": true
+    },
+    "ui": {
+        "settingsHelpCollapsed": true,
+        "rulesHelpCollapsed": true,
+        "membersHelpCollapsed": true,
+        "v4EasyMode": true
+    }
+}

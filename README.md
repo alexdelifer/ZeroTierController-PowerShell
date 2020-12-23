@@ -8,7 +8,6 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 ## WIP / TODO
 
 - Get/Set/Add/Remove -ZeroTierUser
-- New-ZTNetwork (The API seems broken on this front...)
 - Help documentation...
 
 ## Getting Started
@@ -36,8 +35,10 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 
 - `Set-ZTToken`
 - `Get-ZTStatus`
+- `New-ZTNetwork`
 - `Get-ZTNetwork`
 - `Set-ZTNetwork`
+- `Remove-ZTNetwork`
 - `Get-ZTMember`
 - `Set-ZTMember`
 - `Enable-ZTMember #(Shortcut for Set-ZTMember -Authorized $True)`

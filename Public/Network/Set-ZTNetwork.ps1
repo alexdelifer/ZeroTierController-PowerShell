@@ -60,49 +60,37 @@ function Set-ZTNetwork {
             ValueFromPipelineByPropertyName)]
         $Config
     )
+    # require network id to modify
+    $Path = "/network/$Id"
+    if ($null -ne $NetworkID) {
+        $Path = "/network/$NetworkID"
+    }
     
-    Begin {
-        Write-Debug "BEGIN: Set-ZTNetwork"
-    }
+    # https://my.zerotier.com/central-api.html#network-network-post
 
-    Process {
-        Write-Debug "PROCESS: Set-ZTNetwork"
-        # require network id to modify
-        $Path = "/network/$Id"
-        if ($Id -eq "" -or $Id -eq $Null) {
-            Write-Host "ID Required for Set-ZTNetwork"
-            Break
-        }
-        # https://my.zerotier.com/central-api.html#network-network-post
+    $Body = @{}
+    # Config
+    if ($Null -ne $Config) { $Body.Config = $Config }
+    if ($Null -ne $Name) { $Body.Config += @{Name = $Name } }
+    if ($Null -ne $Private) { $Body.Config += @{Private = $Private } }
+    if ($Null -ne $MulticastLimit) { $Body.Config += @{MulticastLimit = $MulticastLimit } }
+    if ($Null -ne $Routes) { $Body.Config += @{Routes = $Routes } }
+    if ($Null -ne $Rules) { $Body.Config += @{Rules = $Rules } }
+    if ($Null -ne $Tags) { $Body.Config += @{Tags = $Tags } }
+    if ($Null -ne $Capabilities) { $Body.Config += @{Capabilities = $Capabilities } }
+    if ($Null -ne $AuthTokens) { $Body.Config += @{AuthTokens = $AuthTokens } }
+    if ($Null -ne $V4AssignMode) { $Body.Config += @{V4AssignMode = $V4AssignMode } }
+    if ($Null -ne $V6AssignMode) { $Body.Config += @{V6AssignMode = $V6AssignMode } }
+    if ($Null -ne $Dns) { $Body.Config += @{Dns = $Dns } }
+    # Main
+    if ($Null -ne $Description) { $Body.Description = $Description }
+    if ($Null -ne $Ui) { $Body.Ui = $Ui }
+    if ($Null -ne $TagsByName) { $Body.TagsByName = $TagsByName }
+    if ($Null -ne $CapabilitiesByName) { $Body.CapabilitiesByName = $CapabilitiesByName }
+    if ($Null -ne $RulesSource) { $Body.RulesSource = $RulesSource }
+    if ($Null -ne $Permissions) { $Body.Permissions = $Permissions }
 
-        $Body = @{}
-        # Config
-        if ($Null -ne $Name) { $Body.Config += @{Name = $Name } }
-        if ($Null -ne $Private) { $Body.Config += @{Private = $Private } }
-        if ($Null -ne $MulticastLimit) { $Body.Config += @{MulticastLimit = $MulticastLimit } }
-        if ($Null -ne $Routes) { $Body.Config += @{Routes = $Routes } }
-        if ($Null -ne $Rules) { $Body.Config += @{Rules = $Rules } }
-        if ($Null -ne $Tags) { $Body.Config += @{Tags = $Tags } }
-        if ($Null -ne $Capabilities) { $Body.Config += @{Capabilities = $Capabilities } }
-        if ($Null -ne $AuthTokens) { $Body.Config += @{AuthTokens = $AuthTokens } }
-        if ($Null -ne $V4AssignMode) { $Body.Config += @{V4AssignMode = $V4AssignMode } }
-        if ($Null -ne $V6AssignMode) { $Body.Config += @{V6AssignMode = $V6AssignMode } }
-        if ($Null -ne $Dns) { $Body.Config += @{Dns = $Dns } }
-        # Main
-        if ($Null -ne $Description) { $Body.Description += $Description }
-        if ($Null -ne $Ui) { $Body.Ui += $Ui }
-        if ($Null -ne $TagsByName) { $Body.TagsByName += $TagsByName }
-        if ($Null -ne $CapabilitiesByName) { $Body.CapabilitiesByName += $CapabilitiesByName }
-        if ($Null -ne $RulesSource) { $Body.RulesSource += $RulesSource }
-        if ($Null -ne $Permissions) { $Body.Permissions += $Permissions }
+    Write-Debug ($Body | ConvertTo-Json -Depth 10 )
+    Invoke-ZTAPI -Path $Path -Body $Body -Method "POST"
 
-        Write-Debug ($Body | ConvertTo-Json -Depth 10 )
-        $Return = Invoke-ZTAPI -Path $Path -Body $Body -Method "POST"
-        Return $Return
-        
-    }
-
-    End {
-        Write-Debug "END: Set-ZTNetwork"
-    }
 }

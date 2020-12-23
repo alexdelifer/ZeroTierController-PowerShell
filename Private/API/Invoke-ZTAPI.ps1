@@ -12,10 +12,8 @@ function Invoke-ZTAPI {
 
     if ($Body) {
         Write-Debug "Pre $($Body | ConvertTo-Json -Depth 10)"
-        #$Method = "POST"
         # Sanitize our inputs
         [PSCustomObject]$Body = $Body | ForEach-Object { $_ | ConvertTo-CamelCaseProperty } 
-        #$Body = $Body.SyncRoot
         $Body = $Body | ConvertTo-Json -Depth 10
         Write-Debug "Post $Body"
     }

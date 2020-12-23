@@ -42,16 +42,7 @@ function Add-ZTMember {
         $NetworkId
     )
 
-    Begin {
-        Write-Debug "BEGIN: Add-ZTMember"
-    }
+    $null = Set-ZTNetwork -Id $Id -AuthTokens @($Node)
+    Set-ZTMember @PSBoundParameters
 
-    Process {
-        Write-Debug "PROCESS: Add-ZTMember"
-        $null = Set-ZTNetwork -Id $Id -AuthTokens @($Node)
-        Set-ZTMember @PSBoundParameters
-    }
-    End {
-        Write-Debug "END: Add-ZTMember"
-    }
 }

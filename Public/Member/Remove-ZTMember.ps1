@@ -14,20 +14,12 @@ function Remove-ZTMember {
             ValueFromPipelineByPropertyName)]
         $NetworkId
     )
-    Begin {
-        Write-Debug "BEGIN: Add-ZTMember"
-    }
-    Process {
-        Write-Debug "PROCESS: Add-ZTMember"
 
-        $memberargs = @{
-            Hidden        = $True
-            Authorized    = $False
-            IpAssignments = @{}
-        }
-        Set-ZTMember @PSBoundParameters @memberargs
+    $memberargs = @{
+        Hidden        = $True
+        Authorized    = $False
+        IpAssignments = @{}
     }
-    End {
-        Write-Debug "END: Add-ZTMember"
-    }
+    Set-ZTMember @PSBoundParameters @memberargs
+
 }
