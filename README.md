@@ -7,7 +7,8 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 
 ## WIP / TODO
 
-- Get/Set/Add/Remove -ZeroTierUser
+- (Add,Remove)-ZTUser
+- Ability to specify API endpoint
 - Help documentation...
 
 ## Getting Started
@@ -33,6 +34,8 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 
 ## Commands
 
+- `Invoke-ZTAPI` (Lower level direct API call based on Invoke-RestMethod)
+- `Get-ZTToken`
 - `Set-ZTToken`
 - `Get-ZTStatus`
 - `New-ZTNetwork`
@@ -41,10 +44,14 @@ This is basically my first real PowerShell module, let me know if I can do anyth
 - `Remove-ZTNetwork`
 - `Get-ZTMember`
 - `Set-ZTMember`
-- `Enable-ZTMember #(Shortcut for Set-ZTMember -Authorized $True)`
-- `Disable-ZTMember #(Shortcut for Set-ZTMember -Authorized $False)`
+- `Enable-ZTMember` (Shortcut for Set-ZTMember -Authorized $True)
+- `Disable-ZTMember` (Shortcut for Set-ZTMember -Authorized $False)
 - `Add-ZTMember`
 - `Remove-ZTMember`
+- `Get-ZTUser`
+- `Set-ZTUser`
+- `Add-ZTUser` (Coming Soon)
+- `Remove-ZTUser` (Coming Soon)
 
 ## Usage
 
