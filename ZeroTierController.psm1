@@ -1,6 +1,12 @@
 ﻿# Settings
 [string]$Url = "https://my.zerotier.com/api"
-[string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
+if($IsLinux -or $IsMacOS){
+    [string]$TokenPath = "$env:HOME/.zerotier-api-token"
+}else{
+    #windows
+    [string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
+}
+
 
 # Definitions
 [string]$Node = ""
