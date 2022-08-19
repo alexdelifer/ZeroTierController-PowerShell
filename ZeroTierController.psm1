@@ -1,6 +1,18 @@
 ﻿# Settings
-[string]$Url = "https://my.zerotier.com/api"
-[string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
+#custom controller
+if($Global:zturl){ #if variable zturl is set, treat this as a custom controller
+    [string]$Url=$zturl
+}else{
+    [string]$Url = "https://my.zerotier.com/api"
+}
+#setup token paths
+if($IsLinux -or $IsMacOS){
+    [string]$TokenPath = "$env:HOME/.zerotier-api-token"
+}else{
+    #windows
+    [string]$TokenPath = "$env:USERPROFILE\.zerotier-api-token"
+}
+
 
 # Definitions
 [string]$Node = ""
@@ -158,15 +170,14 @@ function Invoke-ZTAPI {
         Write-Debug "Post $Body"
     }
 
-    $apiargs = @{
-        Uri         = "$Url$Path"
-        Headers     = @{ "Authorization" = "Bearer $(Get-ZTToken)" }
-        Method      = $Method
-        Body        = $Body
-        ContentType = 'application/json'
-        ErrorAction = 'Stop'
-    }
-    
+        $apiargs = @{
+            Uri         = "$Url$Path"
+            Headers     = @{ "Authorization" = "Bearer $(Get-ZTToken)" }
+            Method      = $Method
+            Body        = $Body
+            ContentType = 'application/json'
+            ErrorAction = 'Stop'
+        }
 
     try {
         # Do the magic

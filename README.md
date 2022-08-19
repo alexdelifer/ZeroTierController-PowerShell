@@ -143,6 +143,17 @@ SupportsRulesEngine : True
 
 ```
 
+### Using custom controller (self hosted)
+
+Grab your authtoken from the controllers authtoken.secret
+
+```powershell
+
+PS > $zturl="http://yourcontrollerurl/api"
+
+```
+
+
 ## References
 
 [ZeroTier API Help](https://my.zerotier.com/help/api)
