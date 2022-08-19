@@ -3,8 +3,9 @@
 if($Global:zturl){ #if variable zturl is set, treat this as a custom controller
     [string]$Url=$zturl
     [bool]$customcontroller=$true
+}else{
+    [string]$Url = "https://my.zerotier.com/api"
 }
-[string]$Url = "https://my.zerotier.com/api"
 #setup token paths
 if($IsLinux -or $IsMacOS){
     [string]$TokenPath = "$env:HOME/.zerotier-api-token"
