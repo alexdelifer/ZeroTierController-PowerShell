@@ -2,7 +2,6 @@
 #custom controller
 if($Global:zturl){ #if variable zturl is set, treat this as a custom controller
     [string]$Url=$zturl
-    [bool]$customcontroller=$true
 }else{
     [string]$Url = "https://my.zerotier.com/api"
 }
@@ -170,16 +169,7 @@ function Invoke-ZTAPI {
         $Body = $Body | ConvertTo-Json -Depth 10
         Write-Debug "Post $Body"
     }
-    if($customcontroller){
-        $apiargs = @{
-            Uri         = "$Url$Path"
-            Headers     = @{ "X-ZT1-Auth" = "$(Get-ZTToken)" } #with custom controller token from authtoken.secret is used.
-            Method      = $Method
-            Body        = $Body
-            ContentType = 'application/json'
-            ErrorAction = 'Stop'
-        }
-    }else{
+
         $apiargs = @{
             Uri         = "$Url$Path"
             Headers     = @{ "Authorization" = "Bearer $(Get-ZTToken)" }
@@ -188,9 +178,6 @@ function Invoke-ZTAPI {
             ContentType = 'application/json'
             ErrorAction = 'Stop'
         }
-    }
-
-    
 
     try {
         # Do the magic
