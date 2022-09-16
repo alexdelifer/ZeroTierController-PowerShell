@@ -5,8 +5,10 @@ A PowerShell library to interact with the ZeroTier Network Controller API
 I was surprised nobody else had already tackled this, this is a great way to get started talking to REST APIs.
 This is basically my first real PowerShell module, let me know if I can do anything better.
 
-## WIP / TODO
+## TODO
 
+- ~~Linux / macOS support~~ Thanks OvrAp3x
+- ~~GitHub Actions Workflow to publish automatically~~ Thanks OvrAp3x
 - Get/Set/Add/Remove -ZeroTierUser
 - New-ZTNetwork (The API seems broken on this front...)
 - Help documentation...
