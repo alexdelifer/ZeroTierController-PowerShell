@@ -6,13 +6,13 @@ name: CI
 on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
-    branches: [ "master" ]
+    branches: ["main"]
     paths:
-      - "*.psd1"
+      - "*/*.psd1"
   pull_request:
-    branches: [ "master" ]
+    branches: ["main"]
     paths:
-      - "*.psd1"
+      - "*/*.psd1"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -29,6 +29,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
       - uses: Amadevus/pwsh-script@v2
-        id: my-script
+        id: publish
         with:
-          script: 'Publish-Module -force -Path . -NuGetApiKey ${{ secrets.PS_GALLERY_KEY }}'
+          script: "Publish-Module -force -Path ZeroTierController -NuGetApiKey ${{ secrets.PS_GALLERY_KEY }}"
