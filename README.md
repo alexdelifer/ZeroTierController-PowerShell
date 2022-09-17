@@ -1,5 +1,7 @@
 # ZeroTierController-PowerShell
 
+[![CI](https://github.com/alexdelifer/ZeroTierController-PowerShell/actions/workflows/main.yml/badge.svg)](https://github.com/alexdelifer/ZeroTierController-PowerShell/actions/workflows/main.yml)
+
 A PowerShell library to interact with the ZeroTier Network Controller API
 
 I was surprised nobody else had already tackled this, this is a great way to get started talking to REST APIs.
